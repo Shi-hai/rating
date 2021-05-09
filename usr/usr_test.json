@@ -1,0 +1,46 @@
+{
+	"notes": [
+		{
+			"pitch": 1,
+			"start_time": 10,
+			"end_time": 100,
+			"confidence": 1
+		},
+		{
+			"pitch": 1,
+			"start_time": 205,
+			"end_time": 300,
+			"confidence": 1
+		},
+		{
+			"pitch": 2,
+			"start_time": 400,
+			"end_time": 500,
+			"confidence": 1
+		},
+		{
+			"pitch": 1,
+			"start_time": 350,
+			"end_time": 500,
+			"confidence": 1
+		},
+		{
+			"pitch": 1,
+			"start_time": 650,
+			"end_time": 700,
+			"confidence": 1
+		},
+		{
+			"pitch": 1,
+			"start_time": 620,
+			"end_time": 700,
+			"confidence": 1
+		},
+		{
+			"pitch": 1,
+			"start_time": 750,
+			"end_time": 900,
+			"confidence": 1
+		}
+	]
+}
