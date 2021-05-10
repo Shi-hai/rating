@@ -5,6 +5,7 @@ Custom::Custom(DTW *dtw, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::custom)
 {
+    this->dtw = dtw;
     ui->setupUi(this);
     setWindowTitle("自定义技术类别");
     // 只能选中某一行
@@ -17,20 +18,7 @@ Custom::Custom(DTW *dtw, QWidget *parent) :
 
     ui->bars->setText(QString::number(dtw->bars));
 
-    // 默认添加左右手打分
-    ui->rule_list->insertRow(0);
-    ui->rule_list->setItem(0, 0, new QTableWidgetItem("左手得分"));
-    ui->rule_list->setItem(0, 1, new QTableWidgetItem("1"));
-    ui->rule_list->setItem(0, 2, new QTableWidgetItem(QString::number(dtw->bars)));
-    ui->rule_list->setItem(0, 3, new QTableWidgetItem("5"));
-    ui->rule_list->setItem(0, 4, new QTableWidgetItem("左手"));
-
-    ui->rule_list->insertRow(1);
-    ui->rule_list->setItem(1, 0, new QTableWidgetItem("右手得分"));
-    ui->rule_list->setItem(1, 1, new QTableWidgetItem("1"));
-    ui->rule_list->setItem(1, 2, new QTableWidgetItem(QString::number(dtw->bars)));
-    ui->rule_list->setItem(1, 3, new QTableWidgetItem("5"));
-    ui->rule_list->setItem(1, 4, new QTableWidgetItem("右手"));
+    loadRules();
 
 }
 
@@ -39,8 +27,28 @@ Custom::~Custom()
     delete ui;
 }
 
+void Custom::loadRules()
+{
+    int num = 0;
+    for(auto rule: dtw->rules) {
+        for(int i = 0; i < rule.timeRange.size(); ++i, ++num) {
+            ui->rule_list->insertRow(num);
+            ui->rule_list->setItem(num, 0, new QTableWidgetItem(rule.ruleName));
+            ui->rule_list->setItem(num, 1, new QTableWidgetItem(QString::number(rule.timeRange[i].first)));
+            ui->rule_list->setItem(num, 2, new QTableWidgetItem(QString::number(rule.timeRange[i].second)));
+            ui->rule_list->setItem(num, 3, new QTableWidgetItem(QString::number(rule.weight)));
+            if(rule.handType == both_hand)
+                ui->rule_list->setItem(num, 4, new QTableWidgetItem("双手"));
+            else if(rule.handType == left_hand)
+                ui->rule_list->setItem(num, 4, new QTableWidgetItem("左手"));
+            else
+                ui->rule_list->setItem(num, 4, new QTableWidgetItem("右手"));
+        }
+    }
+}
+
 void Custom::on_add_released()
 {
-    Rule rule;
+    Rule rule(dtw);
     rule.exec();
 }

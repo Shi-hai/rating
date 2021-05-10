@@ -18,6 +18,25 @@ enum {
     technic   // 技术分：对技术点分类后，按类型处理
 };
 
+enum {
+    both_hand,  // 双手
+    left_hand,  // 左手
+    right_hand  // 右手
+};
+
+// first开始小节，second结束小节
+typedef QPair<int, int> Range;
+const int DEFAULT_WEIGHT = 5;
+
+class CustomedRule {
+public:
+    CustomedRule(QString r, int s, int e, int h, int w);
+    QString ruleName;
+    QVector<Range> timeRange;
+    int handType;
+    int weight;
+};
+
 class DTW
 {
 public:
@@ -42,7 +61,7 @@ public:
     double calFluency(Match &matches1, Match &matches2, double &stdLenth, double &usrLenth);
     double calFluency(Match &matches, double &stdLenth, double &usrLenth);
     double calRhythm(Match &matches, QVector<double> &duration, QVector<double> &position);
-    double calTechnic(Match &matches);
+    double calTechnic();
 
     double getOverall(int scoreType);
 
@@ -53,6 +72,10 @@ public:
     QVector<double> barScore[SCORE_TYPES];
     // 按全曲整体打分
     double overall[SCORE_TYPES];
+
+    // 按小节对左右手分别打分
+    QVector<double> barScoreLeft[SCORE_TYPES];
+    QVector<double> barScoreRight[SCORE_TYPES];
 
     // 准确分信息
     QVector<int> barNotes;
@@ -66,7 +89,11 @@ public:
     QVector<QVector<double>> durationScore;
     QVector<QVector<double>> positionScore;
 
-    // TODO: 技术分信息
+    // 技术分信息
+    // 使用QVector会出现拷贝构造问题，用QList避免
+    QList<CustomedRule> rules;
+    QMap<QString, int> nameMap;
+    QVector<int> barWeight;
 
 private:
     // 指向已读取的曲谱
@@ -81,7 +108,6 @@ private:
     QVector<Match> barMatches; // 各小节匹配情况
 
     int n, m; // std与usr的音符数目
-
 
 };
 

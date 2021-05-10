@@ -43,7 +43,7 @@ QStringList MainWindow::loadJson(QDir dir)
     QFileInfoList list = dir.entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
     qDebug() << "filelist.size = " << list.size();
 
-    for (int i = 0; i < list.size(); ++i)
+    for(int i = 0; i < list.size(); ++i)
     {
         QFileInfo fileInfo = list.at(i);
         if(fileInfo.suffix() == "json") {
@@ -72,6 +72,7 @@ void MainWindow::openJson(QFile &file, Sheet &sheet, bool isStd)
         qDebug() << "format error";
         return;
     }
+
     QJsonArray vals = json.value("notes").toArray();
     for(int i = 0; i < vals.size(); ++i) {
         QJsonObject obj = vals.at(i).toObject();

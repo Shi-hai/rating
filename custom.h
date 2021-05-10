@@ -2,8 +2,8 @@
 #define CUSTOM_H
 
 #include <QWidget>
-#include "rule.h"
 #include "dtw.h"
+#include "rule.h"
 
 namespace Ui {
 class custom;
@@ -17,11 +17,14 @@ public:
     explicit Custom(DTW *dtw, QWidget *parent = nullptr);
     ~Custom();
 
+    void loadRules();
+
 private slots:
     void on_add_released();
 
 private:
     Ui::custom *ui;
+    DTW *dtw;
 };
 
 #endif // CUSTOM_H

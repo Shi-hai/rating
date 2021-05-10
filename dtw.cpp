@@ -10,8 +10,18 @@ DTW::DTW(Sheet &_std, Sheet &_usr)
     m = usr->pitch.size();
     bars = std->bar[n-1];
     // 用小节总数初始化各项得分的vector容量
-    for(int i = 0; i < SCORE_TYPES; ++i)
+    for(int i = 0; i < SCORE_TYPES; ++i) {
         barScore[i].resize(bars+1);
+        // 左右手分数只初始化到1，便于后续push_back
+        barScoreLeft[i].resize(1);
+        barScoreRight[i].resize(1);
+    }
+
+    // 加载默认规则，按左右手评分
+    rules.push_back(CustomedRule(QString("左手"), 1 ,bars, left_hand,  DEFAULT_WEIGHT));
+    rules.push_back(CustomedRule(QString("右手"), 1, bars, right_hand, DEFAULT_WEIGHT));
+    nameMap["左手"] = 0;
+    nameMap["右手"] = 1;
 
     // 用小节总数初始化详细信息的vector容量
     barNotes.resize(bars+1);
@@ -22,6 +32,8 @@ DTW::DTW(Sheet &_std, Sheet &_usr)
 
     durationScore.resize(bars+1);
     positionScore.resize(bars+1);
+
+    barWeight.resize(bars+1);
 
     getDTW();
     // 先求整体的匹配情况，求出后再用于求小节的匹配情况
@@ -87,6 +99,19 @@ void DTW::calScore()
         qDebug() << "bar:" << i << "  rhy:" << barScore[rhythm][i];
     }
     overall[rhythm] = rhythmSum / bars;
+
+    // show the score of left and right hand
+//    for(int i = 1; i <= bars; ++i) {
+//        qDebug() << "bar=" << i;
+//        qDebug() << "left";
+//        qDebug() << " acc=" << barScoreLeft[accuracy][i]
+//                 << " flu=" << barScoreLeft[fluency] [i]
+//                 << " rhy=" << barScoreLeft[rhythm]  [i];
+//        qDebug() << "right";
+//        qDebug() << " acc=" << barScoreRight[accuracy][i]
+//                 << " flu=" << barScoreRight[fluency] [i]
+//                 << " rhy=" << barScoreRight[rhythm]  [i];
+//    }
 
 }
 
@@ -154,12 +179,11 @@ double DTW::getDist(int i, int j, double stdOffset, double usrOffset)
 double DTW::calAccuracy(Match &matches)
 {
     // 两曲谱的音符数目差值
-//    int err_notes = abs(n-m);
     int bar_notes = matches.size();
     int err_notes = 0;
+
     for(auto it = matches.begin(); it != matches.end(); ++it) {
         int stdNote = it.key();
-
         bool isMatch = false;
         for(int i = 0; i < it.value().size(); ++i) {
             int usrNote = it.value()[i];
@@ -174,29 +198,39 @@ double DTW::calAccuracy(Match &matches)
     return accuracy_score;
 }
 
-// 计算小节，加载详细信息
+// 计算小节，加载详细信息，并分别计算左右手
 double DTW::calAccuracy(Match &matches, int &barNotes, int &errNotes)
 {
     // 两曲谱的音符数目差值
-//    int err_notes = abs(n-m);
     int bar_notes = matches.size();
     int err_notes = 0;
+
+    int bar_left = 0, bar_right = 0;
+    int err_left = 0, err_right = 0;
+
     for(auto it = matches.begin(); it != matches.end(); ++it) {
         int stdNote = it.key();
-
+        std->hand[stdNote-1] == 1? ++bar_left: ++bar_right;
         bool isMatch = false;
         for(int i = 0; i < it.value().size(); ++i) {
             int usrNote = it.value()[i];
             // 除了第一个音高相同的音符，都按错误音符处理
             if(!isMatch && std->pitch[stdNote-1] == usr->pitch[usrNote-1])
                 isMatch = true;
-            else ++err_notes;
+            else {
+                ++err_notes;
+                std->hand[stdNote-1] == 1? ++err_left: ++err_right;
+            }
         }
     }
     double accuracy_score = 100.0*(qMax(0, bar_notes-err_notes)) / bar_notes;
     qDebug() << "bar_notes = " << bar_notes << "  err_notes = " << err_notes;
     barNotes = bar_notes;
     errNotes = err_notes;
+
+    barScoreLeft[accuracy].push_back(100.0*(qMax(0, bar_left-err_left)) / bar_left);
+    barScoreRight[accuracy].push_back(100.0*(qMax(0, bar_right-err_right)) / bar_right);
+
     return accuracy_score;
 }
 
@@ -230,20 +264,24 @@ double DTW::calFluency(Match &matches1, Match &matches2, double &stdLenth, doubl
             usrEnd   = qMax(usrEnd,   usr->start[usrNote-1]);
         }
     }
-
+    double res = 0;
     // 若仍为初始值，则没有匹配上的音符，打0分
     if(usrStart == INFINITY)
-        return 0;
-
-    // 计算用户时长相对标准时长的差异，超过一倍时长打0分
-    usrLenth = usrEnd - usrStart;
-    if(usrLenth >= stdLenth) {
-        double diff = usrLenth - stdLenth;
-        return qMax(0.0, 100 * (1 - diff/stdLenth));
-    }
+        res = 0;
     else {
-        return 100 * usrLenth / stdLenth;
+        // 计算用户时长相对标准时长的差异，超过一倍时长打0分
+        usrLenth = usrEnd - usrStart;
+        if(usrLenth >= stdLenth) {
+            double diff = usrLenth - stdLenth;
+            res = qMax(0.0, 100 * (1 - diff/stdLenth));
+        }
+        // 时长不足，按耗时百分比计算得分
+        else res = 100 * usrLenth / stdLenth;
     }
+    // 流畅性上，左右手得分沿用整体分数即可
+    barScoreLeft[fluency].push_back(res);
+    barScoreRight[fluency].push_back(res);
+    return res;
 }
 
 // 对于最后一小节，只比较本小节的音符，其余与上述一致
@@ -264,16 +302,20 @@ double DTW::calFluency(Match &matches, double &stdLenth, double &usrLenth)
 
         }
     }
+    double res = 0;
     if(usrStart == INFINITY)
-        return 0;
-    usrLenth = usrEnd - usrStart;
-    if(usrLenth >= stdLenth) {
-        double diff = usrLenth - stdLenth;
-        return qMax(0.0, 100 * (1 - diff/stdLenth));
-    }
+        res = 0;
     else {
-        return 100 * usrLenth / stdLenth;
+        usrLenth = usrEnd - usrStart;
+        if(usrLenth >= stdLenth) {
+            double diff = usrLenth - stdLenth;
+            res = qMax(0.0, 100 * (1 - diff/stdLenth));
+        }
+        else res = 100 * usrLenth / stdLenth;
     }
+    barScoreLeft[fluency].push_back(res);
+    barScoreRight[fluency].push_back(res);
+    return res;
 }
 
 double DTW::calRhythm(Match &matches, QVector<double> &duration, QVector<double> &position)
@@ -286,13 +328,16 @@ double DTW::calRhythm(Match &matches, QVector<double> &duration, QVector<double>
     duration.resize(barNotes+1);
     position.resize(barNotes+1);
 
+    int bar_left = 0, bar_right = 0;
+
     // 将本小节第一对匹配的音符的开始时间，作为规整的偏移量
     double stdOffset = std->start[startNote-1];
     double usrOffset = usr->start[matches.begin().value()[0]-1];
-    double sum = 0;
+    double sum = 0, sumLeft = 0, sumRight = 0;
     int num = 0;
     for(auto it = matches.begin(); it != matches.end(); ++it) {
         int stdNote = it.key();
+        std->hand[stdNote-1] == 1? ++bar_left: ++bar_right;
         // 维护最佳匹配的信息
         double minDist = INFINITY;
         int bestNote = -1;
@@ -312,7 +357,7 @@ double DTW::calRhythm(Match &matches, QVector<double> &duration, QVector<double>
         double positionScore = qMax(1-2*minDist/barLen, 0.0);
         double weightedScore = 0.25 * durationScore + 0.75 * positionScore;
         sum += weightedScore;
-
+        std->hand[stdNote-1] == 1? sumLeft += weightedScore: sumRight += weightedScore;
         ++num;
         duration[num] = durationScore;
         position[num] = positionScore;
@@ -325,10 +370,36 @@ double DTW::calRhythm(Match &matches, QVector<double> &duration, QVector<double>
     }
 //    qDebug() << "sum=" << sum << " barNotes=" << barNotes;
 
+    barScoreLeft[rhythm].push_back(100*sumLeft/bar_left);
+    barScoreRight[rhythm].push_back(100*sumRight/bar_right);
+
     return 100*sum/barNotes;
+}
+
+double DTW::calTechnic()
+{
+    for(auto rule: rules) {
+        int id = nameMap[rule.ruleName];
+        for(int i = 0; i < rule.timeRange.size(); ++i) {
+            int startBar = rule.timeRange[i].first;
+            int endBar   = rule.timeRange[i].second;
+            for(int j = startBar; j <= endBar; ++j) {
+                barWeight[j] += rule.weight;
+
+            }
+        }
+    }
 }
 
 double DTW::getOverall(int scoreType)
 {
     return overall[scoreType];
+}
+
+CustomedRule::CustomedRule(QString r, int s, int e, int h, int w)
+{
+    ruleName = r;
+    timeRange.push_back(Range(s, e));
+    handType = h;
+    weight = w;
 }
