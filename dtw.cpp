@@ -18,10 +18,8 @@ DTW::DTW(Sheet &_std, Sheet &_usr)
     }
 
     // 加载默认规则，按左右手评分
-    rules.push_back(CustomedRule(QString("左手"), 1 ,bars, left_hand,  DEFAULT_WEIGHT));
+//    rules.push_back(CustomedRule(QString("左手"), 1 ,bars, left_hand,  DEFAULT_WEIGHT));
     rules.push_back(CustomedRule(QString("右手"), 1, bars, right_hand, DEFAULT_WEIGHT));
-    nameMap["左手"] = 0;
-    nameMap["右手"] = 1;
 
     // 用小节总数初始化详细信息的vector容量
     barNotes.resize(bars+1);
@@ -34,7 +32,11 @@ DTW::DTW(Sheet &_std, Sheet &_usr)
     positionScore.resize(bars+1);
 
     barWeight.resize(bars+1);
+}
 
+void DTW::getResult()
+{
+    // 计算路径之差与转移方向
     getDTW();
     // 先求整体的匹配情况，求出后再用于求小节的匹配情况
     getMatches();
@@ -99,6 +101,12 @@ void DTW::calScore()
         qDebug() << "bar:" << i << "  rhy:" << barScore[rhythm][i];
     }
     overall[rhythm] = rhythmSum / bars;
+
+    // 与上述不同，计算技术分和总分，调用一次函数便能得到各小节分数
+    // 技术分
+    overall[technic] = calTechnic();
+    // 总分
+    overall[total] = calTotal();
 
     // show the score of left and right hand
 //    for(int i = 1; i <= bars; ++i) {
@@ -173,6 +181,20 @@ double DTW::getDist(int i, int j, double stdOffset, double usrOffset)
     double usrRegular = usr->start[j-1] - usrOffset;
     // 计算曼哈顿距离
     return qAbs(stdRegular-usrRegular);
+}
+
+// 计算各小节总分，返回整体总分
+double DTW::calTotal()
+{
+    for(int i = 1; i <= bars; ++i) {
+        for(int j = total+1; j < SCORE_TYPES; ++j)
+            barScore[total][i] += barScore[j][i];
+        barScore[total][i] /= 4;
+    }
+    double totalScore = 0;
+    for(int i = total+1; i < SCORE_TYPES; ++i)
+        totalScore += overall[i];
+    return totalScore / 4;
 }
 
 // 计算整体，不加载详细信息
@@ -376,19 +398,44 @@ double DTW::calRhythm(Match &matches, QVector<double> &duration, QVector<double>
     return 100*sum/barNotes;
 }
 
+// 计算各小节技术分，并返回整体技术分
 double DTW::calTechnic()
 {
+    // 所有技术项的权值和
+    double totalWeight = 0;
+    // 所有技术项的加权分数和
+    double techSum = 0;
     for(auto rule: rules) {
-        int id = nameMap[rule.ruleName];
+        // 某一技术项的分数和
+        double singleSum = 0;
+        totalWeight += rule.weight;
         for(int i = 0; i < rule.timeRange.size(); ++i) {
             int startBar = rule.timeRange[i].first;
             int endBar   = rule.timeRange[i].second;
-            for(int j = startBar; j <= endBar; ++j) {
-                barWeight[j] += rule.weight;
+            int barLenth = endBar - startBar + 1;
 
+            for(int bar = startBar; bar <= endBar; ++bar) {
+                barWeight[bar] += rule.weight;
+                barScore[technic][bar] += excludeTechnic(bar, rule.handType) * rule.weight;
+                singleSum += excludeTechnic(bar, rule.handType);
             }
+            techSum += singleSum / barLenth * rule.weight;
         }
     }
+    // 根据总权值标准化，计算各小节技术分
+    for(int i = 1; i <= bars; ++i)
+        barScore[technic][i] /= barWeight[i];
+    // 根据各项技术分和总权值，得到整体技术分
+    return techSum / totalWeight;
+}
+
+double DTW::excludeTechnic(int barNo, int hand_type)
+{
+    if(hand_type == both_hand)
+        return (barScore[accuracy][barNo]+barScore[fluency][barNo]+barScore[rhythm][barNo]) / 3;
+    if(hand_type == left_hand)
+        return (barScoreLeft[accuracy][barNo]+barScoreLeft[fluency][barNo]+barScoreLeft[rhythm][barNo]) / 3;
+    return (barScoreRight[accuracy][barNo]+barScoreRight[fluency][barNo]+barScoreRight[rhythm][barNo]) / 3;
 }
 
 double DTW::getOverall(int scoreType)

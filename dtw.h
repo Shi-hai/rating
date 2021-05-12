@@ -28,8 +28,7 @@ enum {
 typedef QPair<int, int> Range;
 const int DEFAULT_WEIGHT = 5;
 
-class CustomedRule {
-public:
+struct CustomedRule {
     CustomedRule(QString r, int s, int e, int h, int w);
     QString ruleName;
     QVector<Range> timeRange;
@@ -42,6 +41,7 @@ class DTW
 public:
     DTW(Sheet &std, Sheet &usr);
 
+    void getResult();
     void getDTW();
     void getDTWByBar();
     void calScore();
@@ -63,6 +63,7 @@ public:
     double calRhythm(Match &matches, QVector<double> &duration, QVector<double> &position);
     double calTechnic();
 
+    double excludeTechnic(int barNo, int hand_type);
     double getOverall(int scoreType);
 
     // 以下数据设为公有变量，便于其他类获取
@@ -92,7 +93,6 @@ public:
     // 技术分信息
     // 使用QVector会出现拷贝构造问题，用QList避免
     QList<CustomedRule> rules;
-    QMap<QString, int> nameMap;
     QVector<int> barWeight;
 
 private:

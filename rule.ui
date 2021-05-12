@@ -163,6 +163,9 @@
    <property name="text">
     <string>双手</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QRadioButton" name="left">
    <property name="geometry">
@@ -238,7 +241,7 @@
    <property name="geometry">
     <rect>
      <x>284</x>
-     <y>85</y>
+     <y>87</y>
      <width>42</width>
      <height>22</height>
     </rect>

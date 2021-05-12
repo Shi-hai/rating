@@ -29,7 +29,11 @@ void MainWindow::loadComboBox()
     QFile usrFile(usrFileName);
     openJson(stdFile, std, true);
     openJson(usrFile, usr, false);
+
     dtw = new DTW(std, usr);
+    ui->std->setEnabled(false);
+    ui->usr->setEnabled(false);
+    isLoad = true;
 }
 
 // 加载Json文件名到待选列表
@@ -103,23 +107,25 @@ void MainWindow::on_more_released()
 
 void MainWindow::on_confirm_released()
 {
-    if(!isLoad) {
+    if(!isLoad)
         loadComboBox();
-        isLoad = true;
-    }
+
+    dtw->getResult();
+    ui->custom->setEnabled(false);
+
     ui->accuracy->setText(QString::number(qRound(dtw->getOverall(accuracy))));
-    ui->fluency->setText(QString::number(qRound(dtw->getOverall(fluency))));
-    ui->rhythm->setText(QString::number(qRound(dtw->getOverall(rhythm))));
+    ui->fluency-> setText(QString::number(qRound(dtw->getOverall(fluency))));
+    ui->rhythm->  setText(QString::number(qRound(dtw->getOverall(rhythm))));
+    ui->technic-> setText(QString::number(qRound(dtw->getOverall(technic))));
+    ui->total->   setText(QString::number(qRound(dtw->getOverall(total))));
     setMinimumHeight(670);
     setMaximumHeight(670);
 }
 
 void MainWindow::on_custom_released()
 {
-    if(!isLoad) {
+    if(!isLoad)
         loadComboBox();
-        isLoad = true;
-    }
     custom = new Custom(dtw);
     custom->setWindowModality(Qt::ApplicationModal);
     custom->show();
@@ -127,7 +133,13 @@ void MainWindow::on_custom_released()
 
 void MainWindow::on_reset_released()
 {
+    if(dtw == NULL)
+        return;
     delete dtw;
+    dtw = NULL;
+    ui->std->setEnabled(true);
+    ui->usr->setEnabled(true);
+    ui->custom->setEnabled(true);
     isLoad = false;
     setMinimumHeight(280);
     setMaximumHeight(280);

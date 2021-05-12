@@ -48,8 +48,8 @@
    <widget class="QLabel" name="total">
     <property name="geometry">
      <rect>
-      <x>223</x>
-      <y>342</y>
+      <x>222</x>
+      <y>340</y>
       <width>91</width>
       <height>70</height>
      </rect>
@@ -65,6 +65,9 @@
     </property>
     <property name="text">
      <string>100</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -204,7 +207,7 @@
    <widget class="QLabel" name="rhythm">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>31</x>
       <y>455</y>
       <width>71</width>
       <height>61</height>
@@ -218,12 +221,15 @@
     </property>
     <property name="text">
      <string>100</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QLabel" name="accuracy">
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>171</x>
       <y>455</y>
       <width>71</width>
       <height>61</height>
@@ -237,12 +243,15 @@
     </property>
     <property name="text">
      <string>100</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QLabel" name="fluency">
     <property name="geometry">
      <rect>
-      <x>320</x>
+      <x>311</x>
       <y>455</y>
       <width>71</width>
       <height>61</height>
@@ -257,11 +266,14 @@
     <property name="text">
      <string>100</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
    </widget>
    <widget class="QLabel" name="technic">
     <property name="geometry">
      <rect>
-      <x>453</x>
+      <x>444</x>
       <y>456</y>
       <width>70</width>
       <height>61</height>
@@ -275,6 +287,9 @@
     </property>
     <property name="text">
      <string>100</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QPushButton" name="confirm">

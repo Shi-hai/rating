@@ -17,14 +17,21 @@ public:
     explicit Custom(DTW *dtw, QWidget *parent = nullptr);
     ~Custom();
 
-    void loadRules();
+
 
 private slots:
     void on_add_released();
+    void loadRules();
+
+    void on_del_released();
+
+signals:
+    void load_rules_signal();
 
 private:
     Ui::custom *ui;
     DTW *dtw;
+    Rule *rule;
 };
 
 #endif // CUSTOM_H

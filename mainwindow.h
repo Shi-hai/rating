@@ -45,7 +45,7 @@ private:
     Detail *detail;
     Custom *custom;
     Sheet std, usr;
-    DTW *dtw;
+    DTW *dtw = NULL;
 
     bool isLoad = false;
 };
